@@ -1,0 +1,36 @@
+{
+  "users": [
+    {
+      "name": "buyer",
+      "email": "ayushawatirak@gmail.com",
+      "password": "1021",
+      "role": "buyer",
+      "location": "pune",
+      "id": "usr_1787041814437",
+      "isEmailVerified": true,
+      "createdAt": "2026-08-18T08:30:14.437Z"
+    },
+    {
+      "name": "farmer",
+      "email": "ayushawatirak1021@gmail.com",
+      "password": "1021",
+      "role": "farmer",
+      "location": "pune",
+      "id": "usr_1787042706964",
+      "isEmailVerified": true,
+      "createdAt": "2026-08-18T08:45:06.964Z"
+    },
+    {
+      "name": "transporter",
+      "email": "ayushavatirak@gmail.com",
+      "password": "1021",
+      "role": "transporter",
+      "location": "pune",
+      "id": "usr_1787043051696",
+      "isEmailVerified": true,
+      "createdAt": "2026-08-18T08:50:51.696Z"
+    }
+  ],
+  "products": [],
+  "orders": []
+}

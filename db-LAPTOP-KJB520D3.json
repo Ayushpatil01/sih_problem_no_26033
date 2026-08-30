@@ -1,0 +1,243 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "Test Farmer",
+      "email": "farmer@agro.com",
+      "password": "password123",
+      "role": "farmer",
+      "location": "Pune, Maharashtra"
+    },
+    {
+      "name": "Farmer",
+      "email": "farmer@gmail.com",
+      "password": "1021",
+      "role": "farmer",
+      "location": "pune",
+      "createdAt": "2026-08-16T08:49:31.421Z",
+      "id": "7pQG8cy"
+    },
+    {
+      "name": "buyer",
+      "email": "buyer@gmail.com",
+      "password": "1021",
+      "role": "buyer",
+      "location": "pune",
+      "createdAt": "2026-08-16T08:51:09.975Z",
+      "id": "hyjAjrB"
+    },
+    {
+      "name": "transporter",
+      "email": "transporter@gmail.com",
+      "password": "1021",
+      "role": "transporter",
+      "location": "pune",
+      "createdAt": "2026-08-16T08:52:22.689Z",
+      "id": "v2Swoqg"
+    }
+  ],
+  "products": [
+    {
+      "id": "mfY00d6",
+      "farmerId": "MB6RvaL",
+      "farmerName": "ayush",
+      "farmerLocation": "Pune, Maharashtra",
+      "name": "Onion",
+      "category": "Vegetables",
+      "quantity": 0,
+      "quality": "Organic",
+      "price": 25,
+      "images": [
+        "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&q=80&w=400"
+      ],
+      "status": "sold_out",
+      "createdAt": "2026-08-15T10:14:16.919Z"
+    },
+    {
+      "farmerId": "7pQG8cy",
+      "farmerName": "Farmer",
+      "name": "Onion",
+      "category": "Vegetables",
+      "quantity": 0,
+      "quality": "Grade B",
+      "price": 38,
+      "images": [
+        "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&q=80&w=400"
+      ],
+      "status": "sold_out",
+      "createdAt": "2026-08-16T08:49:55.172Z",
+      "id": "zATbTDS"
+    },
+    {
+      "farmerId": "MB6RvaL",
+      "farmerName": "ayush",
+      "name": "Apple",
+      "category": "Fruits",
+      "quantity": 10,
+      "quality": "Grade A",
+      "price": 120,
+      "images": [
+        "https://images.unsplash.com/photo-1560806887-1e4cd0b60b03?auto=format&fit=crop&q=80&w=400"
+      ],
+      "status": "available",
+      "createdAt": "2026-08-17T05:51:55.197Z",
+      "id": "cNlv1Vh"
+    }
+  ],
+  "orders": [
+    {
+      "productId": "mfY00d6",
+      "productName": "Onion",
+      "quantity": 50,
+      "totalPrice": 1250,
+      "farmerId": "MB6RvaL",
+      "farmerName": "ayush",
+      "farmerLocation": "Pune, Maharashtra",
+      "buyerId": "hyjAjrB",
+      "otherPartyName": "buyer",
+      "otherPartyLocation": "pune",
+      "transporterId": "v2Swoqg",
+      "transporterName": "transporter",
+      "status": "Delivered",
+      "createdAt": "2026-08-16T08:51:34.409Z",
+      "trackingHistory": [
+        {
+          "status": "Order Placed",
+          "location": "pune",
+          "timestamp": "2026-08-16T08:51:34.409Z"
+        },
+        {
+          "status": "Transporter Assigned",
+          "location": "pune",
+          "timestamp": "2026-08-16T08:52:35.603Z"
+        },
+        {
+          "status": "In Transit",
+          "location": "pune",
+          "timestamp": "2026-08-16T08:54:32.158Z"
+        },
+        {
+          "status": "Delivered",
+          "location": "pune",
+          "timestamp": "2026-08-16T08:54:34.567Z"
+        }
+      ],
+      "id": 1,
+      "location": "pune"
+    },
+    {
+      "productId": "zATbTDS",
+      "productName": "Onion",
+      "quantity": 3,
+      "totalPrice": 114,
+      "farmerId": "7pQG8cy",
+      "farmerName": "Farmer",
+      "farmerLocation": "Farm Origin",
+      "buyerId": "hyjAjrB",
+      "otherPartyName": "buyer",
+      "otherPartyLocation": "pune",
+      "transporterId": "v2Swoqg",
+      "transporterName": "transporter",
+      "status": "Delivered",
+      "createdAt": "2026-08-17T09:31:18.982Z",
+      "trackingHistory": [
+        {
+          "status": "Order Placed",
+          "location": "pune",
+          "timestamp": "2026-08-17T09:31:18.982Z"
+        },
+        {
+          "status": "Transporter Assigned",
+          "location": "pune",
+          "timestamp": "2026-08-17T09:31:53.348Z"
+        },
+        {
+          "status": "In Transit",
+          "location": "pune",
+          "timestamp": "2026-08-17T09:33:54.467Z"
+        },
+        {
+          "status": "Delivered",
+          "location": "pune",
+          "timestamp": "2026-08-17T09:33:56.699Z"
+        }
+      ],
+      "id": 2,
+      "location": "pune"
+    }
+  ],
+  "messages": [
+    {
+      "id": "1",
+      "senderId": "8yrxkmU",
+      "senderName": "buyer",
+      "receiverId": "MB6RvaL",
+      "receiverName": "ayush",
+      "text": "Hello, is the crop available for dispatch?",
+      "timestamp": "2026-08-15T12:00:00.000Z"
+    },
+    {
+      "senderId": "hyjAjrB",
+      "senderName": "buyer",
+      "receiverId": "MB6RvaL",
+      "receiverName": "ayush",
+      "text": "hi",
+      "timestamp": "2026-08-16T09:01:02.402Z",
+      "id": "cdZMUE_"
+    },
+    {
+      "senderId": "hyjAjrB",
+      "senderName": "buyer",
+      "receiverId": "MB6RvaL",
+      "receiverName": "ayush",
+      "text": "me ayush",
+      "timestamp": "2026-08-16T09:01:16.018Z",
+      "id": "t3UdZGA"
+    },
+    {
+      "senderId": "7pQG8cy",
+      "senderName": "Farmer",
+      "receiverId": "",
+      "receiverName": "User",
+      "text": "hi me farmer",
+      "timestamp": "2026-08-16T09:01:55.994Z",
+      "id": "5UF45Xq"
+    },
+    {
+      "senderId": "7pQG8cy",
+      "senderName": "Farmer",
+      "receiverId": "hyjAjrB",
+      "receiverName": "User",
+      "text": "me farmer",
+      "timestamp": "2026-08-16T09:05:05.610Z",
+      "id": "QNcUYhb"
+    },
+    {
+      "senderId": "hyjAjrB",
+      "senderName": "buyer",
+      "receiverId": "MB6RvaL",
+      "receiverName": "ayush",
+      "text": "hi",
+      "timestamp": "2026-08-16T09:05:52.755Z",
+      "id": "AGWBGVC"
+    },
+    {
+      "senderId": "hyjAjrB",
+      "senderName": "buyer",
+      "receiverId": "7pQG8cy",
+      "receiverName": "Farmer",
+      "text": "tu ala kai payje ka",
+      "timestamp": "2026-08-16T09:06:14.880Z",
+      "id": "NveQEs0"
+    },
+    {
+      "senderId": "v2Swoqg",
+      "senderName": "transporter",
+      "receiverId": "7pQG8cy",
+      "receiverName": "Farmer",
+      "text": "order lena yau ky",
+      "timestamp": "2026-08-17T09:32:18.085Z",
+      "id": "52O2afQ"
+    }
+  ]
+}
