@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, ShieldCheck, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
@@ -23,6 +23,20 @@ export default function Register() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // EmailJS Keys (Environment Variables किंवा थेट Keys)
+  const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_z745ghk'; 
+  const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_gmdvnp4'; 
+  const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '05LM5EziB8wCLyguk';
+
+  // 🟢 412 Precondition Failed टाळण्यासाठी Public Key आधीच Initialize करणे
+  useEffect(() => {
+    try {
+      emailjs.init(PUBLIC_KEY);
+    } catch (e) {
+      console.warn('EmailJS init warning:', e);
+    }
+  }, [PUBLIC_KEY]);
 
   // 🟢 पायरी १: ईमेल तपासणे आणि Gmail वर OTP पाठवणे
   const handleInitiateRegister = async (e: React.FormEvent) => {
@@ -49,18 +63,15 @@ export default function Register() {
     const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(randomOtp);
 
-    // Environment Variables (किंवा फॉलबॅक आयडी)
-    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_z745ghk'; 
-    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_gmdvnp4'; 
-    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '05LM5EziB8wCLyguk';
-
+    // ईमेल टेम्पलेटमधील सर्व संभाव्य पॅरामीटर्स मॅप केले आहेत
     const templateParams = {
       to_name: formData.name,
       to_email: cleanEmail,
       email: cleanEmail,
+      user_email: cleanEmail,
       otp_code: randomOtp,
       otp: randomOtp,
-      message: `AgroConnect India OTP: ${randomOtp}`
+      message: `AgroConnect India व्हेरिफिकेशन कोड: ${randomOtp}`
     };
 
     try {
@@ -71,14 +82,19 @@ export default function Register() {
         PUBLIC_KEY
       );
 
-      if (response.status === 200) {
+      if (response.status === 200 || response.text === 'OK') {
         setStep('otp');
       } else {
-        throw new Error('Email status not 200');
+        throw new Error('Email delivery failed');
       }
     } catch (err: any) {
       console.error('EmailJS Send Error:', err);
-      setError('ईमेल पाठवताना त्रुटी आली. कृपया तुमचा ईमेल आयडी तपासा किंवा काही वेळाने प्रयत्न करा.');
+      // कन्सोलमध्ये स्पष्ट एरर लॉग होईल आणि स्क्रीनवर लाल रंगात मेसेज दिसेल
+      setError(
+        err?.text 
+          ? `ईमेल पाठवता आला नाही (${err.text}). कृपया Public Key तपासा.`
+          : 'ईमेल पाठवताना त्रुटी आली. कृपया ईमेल आयडी तपासा किंवा काही वेळाने प्रयत्न करा.'
+      );
     } finally {
       setSendingEmail(false);
     }
@@ -90,7 +106,7 @@ export default function Register() {
     setError('');
 
     if (userEnteredOtp.trim() !== generatedOtp.trim()) {
-      setError('चुकीचा OTP! कृपया ईमेलवर आलेला ६ अंकी OTP टाका.');
+      setError('चुकीचा OTP! कृपया ईमेलवर आलेला बरोबर ६ अंकी OTP टाका.');
       return;
     }
 
@@ -105,12 +121,12 @@ export default function Register() {
         createdAt: new Date().toISOString()
       };
 
-      // १. लोकल मेमरीमध्ये युझर डेटा सेव्ह करा
+      // १. लोकल मेमरीमध्ये सेव्ह करा
       const existingUsers = JSON.parse(localStorage.getItem('agro_registered_users') || '[]');
       existingUsers.push(newUser);
       localStorage.setItem('agro_registered_users', JSON.stringify(existingUsers));
 
-      // २. बॅकएंड असल्यास सिंक करा
+      // २. बॅकएंड असल्यास कॉल करा
       try {
         await fetch('/api/users', {
           method: 'POST',
@@ -121,7 +137,7 @@ export default function Register() {
         console.log('Local Mode active for Vercel deployment');
       }
 
-      // ३. लॉगिन करून डॅशबोर्डवर रिडायरेक्ट करा
+      // ३. लॉगिन करून रोलनुसार डॅशबोर्डवर जा
       login('token_' + Date.now(), newUser as any);
 
       if (newUser.role === 'farmer') {
