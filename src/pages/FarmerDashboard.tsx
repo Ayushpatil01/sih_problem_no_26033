@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useMarket, type Order } from '../context/MarketContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   Sprout, Plus, Package, ArrowRight, 
   MessageCircle, Send, X, Navigation, Clock, Trash2, 
-  TrendingUp, RefreshCw, MapPin
+  TrendingUp, RefreshCw, MapPin, Camera, Sparkles, CheckCircle2
 } from 'lucide-react';
+
+interface AIQualityResult {
+  crop_name: string;
+  grade: string;
+  quality_score_percent: number;
+  defects_observed: string[];
+  estimated_mandi_impact: string;
+  summary_marathi: string;
+}
 
 export default function FarmerDashboard() {
   const { user, logout } = useAuth();
@@ -17,71 +26,6 @@ export default function FarmerDashboard() {
   const [activeChatOrder, setActiveChatOrder] = useState<Order | null>(null);
   const [farmerMessageInput, setFarmerMessageInput] = useState('');
 
-  // 🟢 १. रिअल-टाइम बाजारभाव डेटाबेस (APMC Live Rates)
-  const mandiLiveRates: { [key: string]: { market: string; district: string; min: number; max: number; modal: number; date: string }[] } = {
-    'ताजी भेंडी (Fresh Okra)': [
-      { market: 'पुणे (Gultekdi APMC)', district: 'पुणे', min: 25, max: 35, modal: 28, date: 'आज' },
-      { market: 'नाशिक मार्केट यार्ड', district: 'नाशिक', min: 22, max: 30, modal: 26, date: 'आज' }
-    ],
-    'सेंद्रिय गाजर (Organic Carrot)': [
-      { market: 'पुणे APMC', district: 'पुणे', min: 30, max: 42, modal: 35, date: 'आज' },
-      { market: 'जुन्नर यार्ड', district: 'पुणे', min: 28, max: 38, modal: 32, date: 'आज' }
-    ],
-    'लाल टोमॅटो (Red Tomatoes)': [
-      { market: 'नारायणगाव (Tomato Hub)', district: 'पुणे', min: 18, max: 28, modal: 22, date: 'आज' },
-      { market: 'नाशिक पिंपळगाव', district: 'नाशिक', min: 20, max: 26, modal: 24, date: 'आज' }
-    ],
-    'नाशिक कांदा (Nashik Red Onion)': [
-      { market: 'लासलगाव (Asia\'s Biggest)', district: 'नाशिक', min: 28, max: 36, modal: 32, date: 'आज' },
-      { market: 'पिंपळगाव बसवंत', district: 'नाशिक', min: 29, max: 35, modal: 33, date: 'आज' }
-    ],
-    'सोयाबीन (Clean Soybean)': [
-      { market: 'लातूर मार्केट यार्ड', district: 'लातूर', min: 44, max: 48, modal: 46, date: 'आज' },
-      { market: 'अकोला APMC', district: 'अकोला', min: 43, max: 47, modal: 45, date: 'आज' }
-    ],
-    'कापूस (Raw White Cotton)': [
-      { market: 'जळगाव मार्केट', district: 'जळगाव', min: 70, max: 76, modal: 74, date: 'आज' },
-      { market: 'यवतमाळ यार्ड', district: 'यवतमाळ', min: 68, max: 75, modal: 72, date: 'आज' }
-    ],
-    'डाळिंब (Fresh Pomegranate)': [
-      { market: 'सांगोला मार्केट', district: 'सोलापूर', min: 90, max: 130, modal: 115, date: 'आज' },
-      { market: 'नाशिक APMC', district: 'नाशिक', min: 95, max: 125, modal: 110, date: 'आज' }
-    ]
-  };
-
-  // कॅटेगरीनुसार पिके
-  const categoryCropsMap: { [key: string]: { name: string; img: string; defaultUnit: string; suggestedRate: number }[] } = {
-    VEGETABLE: [
-      { name: 'ताजी भेंडी (Fresh Okra)', img: 'https://images.unsplash.com/photo-1525607551316-4a8e16d1f9ba?w=400', defaultUnit: '500g', suggestedRate: 28 },
-      { name: 'सेंद्रिय गाजर (Organic Carrot)', img: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400', defaultUnit: '1 kg', suggestedRate: 35 },
-      { name: 'लाल टोमॅटो (Red Tomatoes)', img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400', defaultUnit: '1 kg', suggestedRate: 22 },
-      { name: 'नाशिक कांदा (Nashik Red Onion)', img: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400', defaultUnit: '1 kg', suggestedRate: 32 },
-      { name: 'शिमला मिरची (Capsicum)', img: 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400', defaultUnit: '500g', suggestedRate: 40 },
-      { name: 'हिरवी वांगी (Fresh Brinjal)', img: 'https://images.unsplash.com/photo-1628773822503-930a84d93d39?w=400', defaultUnit: '1 kg', suggestedRate: 30 }
-    ],
-    FRUITS: [
-      { name: 'डाळिंब (Fresh Pomegranate)', img: 'https://images.unsplash.com/photo-1541344999736-83eca872f240?w=400', defaultUnit: '1 kg', suggestedRate: 115 },
-      { name: 'ताजा पेरू (Thai Guava)', img: 'https://images.unsplash.com/photo-1536511135882-722db34b95f2?w=400', defaultUnit: '1 kg', suggestedRate: 50 },
-      { name: 'कलिंगड (Sweet Watermelon)', img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400', defaultUnit: '1 piece', suggestedRate: 45 },
-      { name: 'केळी (Fresh Bananas)', img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400', defaultUnit: '1 Dozen', suggestedRate: 40 },
-      { name: 'द्राक्षे (Nashik Grapes)', img: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400', defaultUnit: '500g', suggestedRate: 60 }
-    ],
-    VILLAGE_STAPLES: [
-      { name: 'गावरान तूर डाळ (Desi Toor Dal)', img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400', defaultUnit: '1 kg', suggestedRate: 145 },
-      { name: 'सोयाबीन (Clean Soybean)', img: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=400', defaultUnit: '1 kg', suggestedRate: 46 },
-      { name: 'कापूस (Raw White Cotton)', img: 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=400', defaultUnit: '1 kg', suggestedRate: 74 },
-      { name: 'ज्वारी (Shalu Jowar)', img: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400', defaultUnit: '1 kg', suggestedRate: 55 }
-    ],
-    GHEE: [
-      { name: 'गावठी तूप (Pure A2 Cow Ghee)', img: 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400', defaultUnit: '500 ml', suggestedRate: 650 },
-      { name: 'म्हैशीचे शुद्ध तूप (Buffalo Ghee)', img: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=400', defaultUnit: '1 Litre', suggestedRate: 700 }
-    ],
-    COLD_PRESSED_OIL: [
-      { name: 'घाण्याचे शेंगदाणा तेल (Groundnut Oil)', img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400', defaultUnit: '1 Litre', suggestedRate: 210 },
-      { name: 'सूर्यफूल तेल (Sunflower Oil)', img: 'https://images.unsplash.com/photo-1589217157232-464b505b197f?w=400', defaultUnit: '1 Litre', suggestedRate: 180 }
-    ]
-  };
-
   const [selectedCategory, setSelectedCategory] = useState<string>('VEGETABLE');
   const [selectedCropName, setSelectedCropName] = useState<string>('ताजी भेंडी (Fresh Okra)');
   const [customCropName, setCustomCropName] = useState<string>('');
@@ -89,12 +33,59 @@ export default function FarmerDashboard() {
   const [cropRate, setCropRate] = useState<string>('28');
   const [cropUnit, setCropUnit] = useState<string>('500g');
 
+  // 📸 Camera & AI State
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [aiScanResult, setAiScanResult] = useState<AIQualityResult | null>(null);
+
   const myCrops = products.filter(
     (p) =>
       p.farmer === (user?.name || 'शेतकरी मित्र') ||
       p.farmer.includes('पाटील') ||
       p.farmer.includes('शिंदे')
   );
+
+  // 📷 Camera Trigger Handler
+  const handleCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show Preview
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImage(previewUrl);
+    setIsAnalyzing(true);
+    setAiScanResult(null);
+
+    // Send Image to Flask Backend (app.py)
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/grade-produce', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('AI analysis failed');
+      }
+
+      const result: AIQualityResult = await response.json();
+      setAiScanResult(result);
+
+      // 🤖 ऑटोमॅटिक फॉर्म भरणे (Auto-fill Crop Name)
+      if (result.crop_name) {
+        setIsCustom(true);
+        setCustomCropName(result.crop_name);
+      }
+    } catch (error) {
+      console.error('Camera & AI Scan Error:', error);
+      alert(t('पिकाची AI तपासणी करण्यात त्रुटी आली. कृपया पुन्हा प्रयत्न करा.', 'Failed to analyze crop. Please try again.'));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleDeleteProduct = (id: number, name: string) => {
     const confirmDelete = window.confirm(t(`तुम्हाला नक्की '${name}' हे पीक मार्केटमधून डिलीट करायचे आहे का?`, `Are you sure you want to delete '${name}' from market?`));
@@ -143,9 +134,9 @@ export default function FarmerDashboard() {
     }
 
     const matchedCrop = categoryCropsMap[selectedCategory]?.find((c) => c.name === finalName);
-    const cropImg = matchedCrop
-      ? matchedCrop.img
-      : 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
+    const cropImg = previewImage 
+      ? previewImage 
+      : (matchedCrop ? matchedCrop.img : 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400');
 
     addProduct({
       name: finalName,
@@ -156,11 +147,13 @@ export default function FarmerDashboard() {
       mrp: Number(cropRate) + 15,
       unit: cropUnit || '1 kg',
       img: cropImg,
-      badge: 'Farm Direct 🌾'
+      badge: aiScanResult ? `AGMARK ${aiScanResult.grade} ⭐` : 'Farm Direct 🌾'
     });
 
     setCropRate('');
     setCustomCropName('');
+    setPreviewImage(null);
+    setAiScanResult(null);
     setActiveTab('harvest');
     alert(t('🎉 शेतमाल थेट Buyer App वर प्रसिद्ध झाला आहे!', '🎉 Crop listed live on Buyer App!'));
   };
@@ -180,7 +173,6 @@ export default function FarmerDashboard() {
     setFarmerMessageInput('');
   };
 
-  // सध्या निवडलेल्या पिकाचे लाईव्ह APMC दर
   const currentLiveMandiData = mandiLiveRates[selectedCropName] || [
     { market: 'पुणे APMC मार्केट यार्ड', district: 'पुणे', min: Number(cropRate) - 4, max: Number(cropRate) + 5, modal: Number(cropRate), date: 'आज' }
   ];
@@ -205,7 +197,6 @@ export default function FarmerDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* 🌐 Language Switcher Button */}
             <div className="flex bg-black/20 p-0.5 rounded-xl border border-white/20 text-[11px] font-bold">
               <button
                 onClick={() => setLang('mr')}
@@ -267,7 +258,7 @@ export default function FarmerDashboard() {
                         <h4 className="text-xs font-black text-gray-900">{c.name}</h4>
                         <p className="text-[11px] font-bold text-emerald-700 mt-0.5">₹{c.price} / {c.unit}</p>
                         <span className="text-[9px] bg-green-50 text-green-700 px-2 py-0.5 rounded-md font-bold mt-1 inline-block">
-                          Live on Buyer App 🟢
+                          {c.badge || 'Live on Buyer App 🟢'}
                         </span>
                       </div>
                     </div>
@@ -291,12 +282,93 @@ export default function FarmerDashboard() {
           </>
         )}
 
-        {/* 🟢 TAB 2: ADD NEW CROP WITH LIVE MANDI RATES */}
+        {/* 🟢 TAB 2: ADD NEW CROP WITH AI CAMERA SCAN */}
         {activeTab === 'add' && (
           <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4">
             <div>
               <h3 className="text-sm font-black text-gray-900">{t('नवीन शेतमाल विक्रीसाठी जोडा', 'List New Crop for Sale')}</h3>
               <p className="text-xs text-gray-400 mt-0.5">{t('थेट APMC बाजारभावासह शेतमाल ग्राहकांना विका.', 'Sell produce directly to buyers at live APMC rates.')}</p>
+            </div>
+
+            {/* 📸 AI CAMERA SCANNER CARD */}
+            <div className="bg-emerald-50/70 border-2 border-dashed border-emerald-300 rounded-2xl p-4 text-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleCameraCapture}
+                className="hidden"
+              />
+
+              {!previewImage ? (
+                <div className="space-y-2">
+                  <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                    <Camera className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-800">
+                      {t('पिकाचा थेट फोटो काढा (AI Quality Scan)', 'Snap Produce Photo (AI Scan)')}
+                    </h4>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      {t('Gemini AI आपोआप पिकाचा प्रकार आणि AGMARK प्रतवारी ठरवेल.', 'Gemini AI auto-detects crop & AGMARK grade.')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-[#1B5E20] hover:bg-emerald-800 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-xs transition flex items-center gap-1.5 mx-auto"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    <span>{t('कॅमेरा उघडा', 'Open Camera')}</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative inline-block">
+                    <img 
+                      src={previewImage} 
+                      alt="Captured Crop" 
+                      className="w-24 h-24 object-cover rounded-xl border border-emerald-400 mx-auto shadow-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewImage(null);
+                        setAiScanResult(null);
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full text-xs shadow-md"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  {isAnalyzing && (
+                    <div className="flex items-center justify-center gap-2 text-xs font-bold text-emerald-800 animate-pulse">
+                      <Sparkles className="h-4 w-4 text-amber-500 animate-spin" />
+                      <span>{t('Gemini AI द्वारे प्रतवारी तपासली जात आहे...', 'Gemini AI is analyzing quality...')}</span>
+                    </div>
+                  )}
+
+                  {aiScanResult && (
+                    <div className="bg-white border border-emerald-200 rounded-xl p-3 text-left space-y-1 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-extrabold text-emerald-900 text-sm">{aiScanResult.crop_name}</span>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                          {aiScanResult.grade}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-600">
+                        {t('गुणवत्ता स्कोअर:', 'Quality Score:')} <strong className="text-emerald-700">{aiScanResult.quality_score_percent}%</strong>
+                      </p>
+                      <p className="text-[11px] text-gray-700 italic mt-1 bg-emerald-50 p-1.5 rounded-lg border border-emerald-100">
+                        {aiScanResult.summary_marathi}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <form onSubmit={handlePublishCrop} className="space-y-4">
@@ -349,7 +421,7 @@ export default function FarmerDashboard() {
                 )}
               </div>
 
-              {/* 🔴 LIVE MANDI RATE CARD (थेट आजचा बाजारभाव) */}
+              {/* 🔴 LIVE MANDI RATE CARD */}
               <div className="bg-[#F0FDF4] border border-emerald-300 rounded-2xl p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-black text-emerald-950">

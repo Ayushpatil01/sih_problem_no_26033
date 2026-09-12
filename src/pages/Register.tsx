@@ -31,7 +31,7 @@ export default function Register() {
 
     const cleanEmail = formData.email.trim().toLowerCase();
 
-    // 🔴 मुख्य चेक: ईमेल आधीच कोणत्याही रोलसाठी नोंदणीकृत आहे का ते तपासणे
+    // 🔴 मुख्य चेक: ईमेल आधीच नोंदणीकृत आहे का ते तपासणे
     const existingUsers = JSON.parse(localStorage.getItem('agro_registered_users') || '[]');
     const alreadyRegistered = existingUsers.find(
       (u: any) => u.email?.trim().toLowerCase() === cleanEmail
@@ -39,7 +39,7 @@ export default function Register() {
 
     if (alreadyRegistered) {
       const existingRole = alreadyRegistered.role.toUpperCase();
-      setError(`⚠️ हा ईमेल आधीच "${existingRole}" म्हणून नोंदणीकृत आहे! एका ईमेलने दुसरा रोल किंवा पुन्हा नोंदणी करता येणार नाही. कृपया थेट Sign In करा.`);
+      setError(`⚠️ हा ईमेल आधीच "${existingRole}" म्हणून नोंदणीकृत आहे! कृपया थेट Sign In करा.`);
       return;
     }
 
@@ -49,43 +49,48 @@ export default function Register() {
     const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(randomOtp);
 
-    // EmailJS Credentials
-    const PUBLIC_KEY = '05LM5EziB8wCLyguk';
-    const SERVICE_ID = 'service_z745ghk'; 
-    const TEMPLATE_ID = 'template_gmdvnp4'; 
+    // Environment Variables (किंवा फॉलबॅक आयडी)
+    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_z745ghk'; 
+    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_gmdvnp4'; 
+    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '05LM5EziB8wCLyguk';
 
     const templateParams = {
       to_name: formData.name,
-      to_email: formData.email,
+      to_email: cleanEmail,
+      email: cleanEmail,
       otp_code: randomOtp,
+      otp: randomOtp,
       message: `AgroConnect India OTP: ${randomOtp}`
     };
 
     try {
-      await emailjs.send(
+      const response = await emailjs.send(
         SERVICE_ID,
         TEMPLATE_ID,
         templateParams,
         PUBLIC_KEY
       );
-      setStep('otp');
+
+      if (response.status === 200) {
+        setStep('otp');
+      } else {
+        throw new Error('Email status not 200');
+      }
     } catch (err: any) {
-      console.warn('EmailJS fallback active:', err);
-      // फॉलबॅक अलर्ट:
-      setStep('otp');
-      alert(`🔐 AgroConnect व्हेरिफिकेशन कोड: ${randomOtp}\n(हा कोड खालील बॉक्समध्ये टाका)`);
+      console.error('EmailJS Send Error:', err);
+      setError('ईमेल पाठवताना त्रुटी आली. कृपया तुमचा ईमेल आयडी तपासा किंवा काही वेळाने प्रयत्न करा.');
     } finally {
       setSendingEmail(false);
     }
   };
 
-  // 🟢 पायरी २: OTP व्हेरिफाय करून युझर सुरक्षित सेव्ह करणे (Vercel & Offline Ready)
+  // 🟢 पायरी २: OTP व्हेरिफाय करून युझर सुरक्षित सेव्ह करणे
   const handleVerifyOtpAndRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (userEnteredOtp.trim() !== generatedOtp.trim()) {
-      setError('चुकीचा OTP! कृपया बरोबर ६ अंकी OTP टाका.');
+      setError('चुकीचा OTP! कृपया ईमेलवर आलेला ६ अंकी OTP टाका.');
       return;
     }
 
@@ -100,12 +105,12 @@ export default function Register() {
         createdAt: new Date().toISOString()
       };
 
-      // १. लोकल मेमरीमध्ये युझर डेटा सुरक्षित सेव्ह करा
+      // १. लोकल मेमरीमध्ये युझर डेटा सेव्ह करा
       const existingUsers = JSON.parse(localStorage.getItem('agro_registered_users') || '[]');
       existingUsers.push(newUser);
       localStorage.setItem('agro_registered_users', JSON.stringify(existingUsers));
 
-      // २. जर बॅकएंड उपलब्ध असेल तर तिकडेही पाठवा
+      // २. बॅकएंड असल्यास सिंक करा
       try {
         await fetch('/api/users', {
           method: 'POST',
@@ -116,10 +121,9 @@ export default function Register() {
         console.log('Local Mode active for Vercel deployment');
       }
 
-      // ३. युझरला थेट लॉगिन करून स्टेट अपडेट करा
+      // ३. लॉगिन करून डॅशबोर्डवर रिडायरेक्ट करा
       login('token_' + Date.now(), newUser as any);
 
-      // ४. रोलनुसार संबंधित डॅशबोर्डवर रिडायरेक्ट करा
       if (newUser.role === 'farmer') {
         navigate('/farmer-dashboard');
       } else if (newUser.role === 'buyer') {
@@ -251,7 +255,7 @@ export default function Register() {
               <div className="text-center p-4 bg-green-50 rounded-2xl border border-green-200">
                 <Mail className="h-8 w-8 text-green-600 mx-auto mb-1 animate-bounce" />
                 <p className="text-xs font-bold text-green-900">OTP व्हेरिफिकेशन कोड टाका</p>
-                <p className="text-[11px] text-green-700 mt-0.5">तुमच्या Gmail वर पाठवलेला ६ अंकी कोड टाका.</p>
+                <p className="text-[11px] text-green-700 mt-0.5">तुमच्या Gmail वर पाठवलेला ६ अंकी कोड टाका (Spam फोल्डरही तपासा).</p>
               </div>
 
               <div>
